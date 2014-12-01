@@ -3,6 +3,7 @@
 error_reporting(0);
 
 class Manager {
+    public $canEditHeader = TRUE;
     public $haveAcess = true;
     private $_encodedUrl = "";
 
@@ -99,10 +100,8 @@ class Manager {
         return array($new_img_width, $new_img_height);
     }
 
-    private function _mpo_image($file)
-    {
-        if (!$mpo = @file_get_contents($file))
-        {
+    private function _mpo_image($file) {
+        if (!$mpo = @file_get_contents($file)) {
             return false;
         }
         $offset = 0;
@@ -110,33 +109,27 @@ class Manager {
         $imgOffset = array();
         $markA = chr(0xFF).chr(0xD8).chr(0xFF).chr(0xE1);
         $markB = chr(0xFF).chr(0xD9).chr(0xFF).chr(0xE0);
-        while ($marker!==false)
-        {
+        while ($marker!==false) {
             $marker = strpos($mpo, $markA, $offset);
-            if ($marker===false)
-            {
+            if ($marker===false) {
                 $marker = strpos($mpo, $markB, $offset);
             }
-            if ($marker!==false)
-            {
+            if ($marker!==false) {
                 $imgOffset[] = $marker;
                 $offset = $marker+4;
             }
         }
         $imgOffset[] = strlen($mpo);
-        if (count($imgOffset)<2)
-        {
+        if (count($imgOffset)<2) {
             return false;
         }
-        if (count($imgOffset)>2)
-        {
+        if (count($imgOffset)>2) {
             $img_left = imagecreatefromstring(substr($mpo, $imgOffset[0], $imgOffset[1]-$imgOffset[0]));
             $img_right = imagecreatefromstring(substr($mpo, $imgOffset[1], $imgOffset[2]-$imgOffset[1]));
             list($mpo_stereo_width, $mpo_stereo_height) = $this->_aspect_resize(imagesx($img_left), imagesy($img_left), MPO_STEREO_MAX_WIDTH, MPO_STEREO_MAX_HEIGHT, true);
             list($mpo_full_width, $mpo_full_height) = $this->_aspect_resize(imagesx($img_left), imagesy($img_left), MPO_FULL_MAX_WIDTH, MPO_FULL_MAX_HEIGHT, false);
             $stereo_dot_space = 0;
-            if (MPO_STEREO_DOTS)
-            {
+            if (MPO_STEREO_DOTS) {
                 $dot_size=3;
                 $stereo_dot_space = 2*$dot_size+2*MPO_SPACING;
             }
@@ -144,17 +137,14 @@ class Manager {
             $new_img_width = 0;
             $new_img_height = 0;
             $full_offset_y = 0;
-            if (MPO_STEREO_IMAGE)
-            {
+            if (MPO_STEREO_IMAGE) {
                 $new_img_width += $mpo_stereo_width*2+MPO_SPACING;
                 $new_img_height += $stereo_dot_space + $mpo_stereo_height + (MPO_FULL_IMAGE ? MPO_SPACING : 0);
                 $full_offset_y = $mpo_stereo_height+MPO_SPACING+$stereo_dot_space;
             }
             $full_offset_x = round(($new_img_width-$mpo_full_width)/2);
-            if (MPO_FULL_IMAGE)
-            {
-                if ($mpo_full_width > $new_img_width)
-                {
+            if (MPO_FULL_IMAGE) {
+                if ($mpo_full_width > $new_img_width) {
                     $new_img_width = $mpo_full_width;
                     $stereo_align = (int)(($mpo_full_width-($mpo_stereo_width*2+MPO_SPACING))/2);
                     $full_offset_x = 0;
@@ -166,20 +156,15 @@ class Manager {
             imagecopyresampled($tmp_left, $img_left, 0, 0, 0, 0, $mpo_full_width, $mpo_full_height, imagesx($img_left), imagesy($img_left));
             $tmp_right = imagecreatetruecolor($mpo_full_width, $mpo_full_height);
             imagecopyresampled($tmp_right, $img_right, 0, 0, 0, 0, $mpo_full_width, $mpo_full_height, imagesx($img_right), imagesy($img_right));
-            if (MPO_FULL_IMAGE)
-            {
-                if (MPO_FULL_ANAGLYPH)
-                {
+            if (MPO_FULL_IMAGE) {
+                if (MPO_FULL_ANAGLYPH) {
                     $anaglyph_image = imagecreatetruecolor($mpo_full_width, $mpo_full_height);
                     imagealphablending($anaglyph_image, false);
-                    for($y=0; $y<$mpo_full_height; $y++)
-                    {
-                        for($x=0; $x<$mpo_full_width; $x++)
-                        {
+                    for($y=0; $y<$mpo_full_height; $y++) {
+                        for($x=0; $x<$mpo_full_width; $x++) {
                             $left_color = imagecolorat($tmp_left, $x, $y);
                             $r = (int)(($left_color >> 16) & 255) * 0.299 + (($left_color >> 8) & 255) * 0.587 + (($left_color) & 255) * 0.114;
-                            if ($r > 255)
-                            {
+                            if ($r > 255) {
                                 $r = 255;
                             }
                             $g = (imagecolorat($tmp_right, $x, $y) >> 8) & 255;
@@ -191,14 +176,11 @@ class Manager {
                     imagedestroy($anaglyph_image);
                     imagedestroy($tmp_left);
                     imagedestroy($tmp_right);
-                }
-                else
-                {
+                } else {
                     imagecopyresampled($new_image, $img_left, $full_offset_x, $full_offset_y, 0, 0, $mpo_full_width, $mpo_full_height, imagesx($img_left), imagesy($img_left));
                 }
             }
-            if (MPO_STEREO_IMAGE)
-            {
+            if (MPO_STEREO_IMAGE) {
                 imagecopyresampled($new_image, $img_left, $stereo_align, $stereo_dot_space, 0, 0, $mpo_stereo_width, $mpo_stereo_height, imagesx($img_left), imagesy($img_left));
                 imagedestroy($img_left);
                 imagecopyresampled($new_image, $img_right, $stereo_align+$mpo_stereo_width+MPO_SPACING, $stereo_dot_space, 0, 0, $mpo_stereo_width, $mpo_stereo_height, imagesx($img_right), imagesy($img_right));
@@ -208,9 +190,7 @@ class Manager {
                 imagefilledrectangle($new_image, $stereo_align+MPO_SPACING+(int)($mpo_stereo_width*1.5)-3, MPO_SPACING-3, $stereo_align+MPO_SPACING+(int)($mpo_stereo_width*1.5)+3, MPO_SPACING+3, $white);
             }
             return $new_image;
-        }
-        else
-        {
+        } else {
             $image = imagecreatefromstring(substr($mpo, $imgOffset[0], $imgOffset[1]-$imgOffset[0]));
             list($mpo_width, $mpo_height) = $this->_aspect_resize(imagesx($image), imagesy($image), MPO_FULL_MAX_WIDTH, MPO_FULL_MAX_HEIGHT, false);
             $new_image = imagecreatetruecolor($mpo_width, $mpo_height);
@@ -323,7 +303,18 @@ class Manager {
         return $display_name;
     }
 
+
     public function image($image_dir, $image_file, $func, $download=FALSE) {
+        if(USE_IMAGICK){
+            $this->image_imagick($image_dir, $image_file, $func, $download);
+        } else {
+            $this->image_gd($image_dir, $image_file, $func, $download);
+        }
+
+    }
+
+
+    public function image_gd($image_dir, $image_file, $func, $download=FALSE) {
         $image_path_file = DATA_ROOT.$func.'/'.$image_dir.$image_file;
         $image_type = $this->_image_type($image_file);
 
@@ -429,93 +420,72 @@ class Manager {
                             }
                         }
 
-                        if (ROTATE_IMAGES and isset($exif_data['Orientation']))
-                        {
+                        if (ROTATE_IMAGES and isset($exif_data['Orientation'])) {
                             $image_width = imagesx($image);
                             $image_height = imagesy($image);
 
-                            switch ($exif_data['Orientation'])
-                            {
-                                case 2 :
-                                {
+                            switch ($exif_data['Orientation']) {
+                                case 2 : {
                                     $rotate = @imagecreatetruecolor($image_width, $image_height);
-                                    if (LOW_IMAGE_RESAMPLE_QUALITY)
-                                    {
+                                    if (LOW_IMAGE_RESAMPLE_QUALITY) {
                                         imagecopyresized($rotate, $image, 0, 0, $image_width-1, 0, $image_width, $image_height, -$image_width, $image_height);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         imagecopyresampled($rotate, $image, 0, 0, $image_width-1, 0, $image_width, $image_height, -$image_width, $image_height);
                                     }
                                     imagedestroy($image);
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 3 :
-                                {
+                                case 3 : {
                                     $rotate = imagerotate($image, 180, 0);
                                     imagedestroy($image);
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 4 :
-                                {
+                                case 4 : {
                                     $rotate = @imagecreatetruecolor($image_width, $image_height);
-                                    if (LOW_IMAGE_RESAMPLE_QUALITY)
-                                    {
+                                    if (LOW_IMAGE_RESAMPLE_QUALITY) {
                                         imagecopyresized($rotate, $image, 0, 0, 0, $image_height-1, $image_width, $image_height, $image_width, -$image_height);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         imagecopyresampled($rotate, $image, 0, 0, 0, $image_height-1, $image_width, $image_height, $image_width, -$image_height);
                                     }
                                     imagedestroy($image);
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 5 :
-                                {
+                                case 5 : {
                                     $rotate = imagerotate($image, 270, 0);
                                     imagedestroy($image);
                                     $image = $rotate;
                                     $rotate = @imagecreatetruecolor($image_height, $image_width);
-                                    if (LOW_IMAGE_RESAMPLE_QUALITY)
-                                    {
+                                    if (LOW_IMAGE_RESAMPLE_QUALITY) {
                                         imagecopyresized($rotate, $image, 0, 0, 0, $image_width-1, $image_height, $image_width, $image_height, -$image_width);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         imagecopyresampled($rotate, $image, 0, 0, 0, $image_width-1, $image_height, $image_width, $image_height, -$image_width);
                                     }
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 6 :
-                                {
+                                case 6 : {
                                     $rotate = imagerotate($image, 270, 0);
                                     imagedestroy($image);
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 7 :
-                                {
+                                case 7 : {
                                     $rotate = imagerotate($image, 90, 0);
                                     imagedestroy($image);
                                     $image = $rotate;
                                     $rotate = @imagecreatetruecolor($image_height, $image_width);
-                                    if (LOW_IMAGE_RESAMPLE_QUALITY)
-                                    {
+                                    if (LOW_IMAGE_RESAMPLE_QUALITY) {
                                         imagecopyresized($rotate, $image, 0, 0, 0, $image_width-1, $image_height, $image_width, $image_height, -$image_width);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         imagecopyresampled($rotate, $image, 0, 0, 0, $image_width-1, $image_height, $image_width, $image_height, -$image_width);
                                     }
                                     $image_changed = TRUE;
                                     break;
                                 }
-                                case 8 :
-                                {
+                                case 8 : {
                                     $rotate = imagerotate($image, 90, 0);
                                     imagedestroy($image);
                                     $image_changed = TRUE;
@@ -584,16 +554,11 @@ class Manager {
                     if ($image_changed) {
                         $this->_mkdir(DATA_ROOT.'image/'.$image_dir);
                         $new_full_img = DATA_ROOT.'image/'.$image_dir.$image_file;
-                        if ($image_type == 'jpeg')
-                        {
+                        if ($image_type == 'jpeg') {
                             imagejpeg($image, $new_full_img, IMAGE_JPEG_QUALITY);
-                        }
-                        elseif ($image_type == 'png')
-                        {
+                        } elseif ($image_type == 'png') {
                             imagepng($image, $new_full_img);
-                        }
-                        elseif ($image_type == 'gif')
-                        {
+                        } elseif ($image_type == 'gif') {
                             imagegif($image, $new_full_img);
                         }
                     }
@@ -611,8 +576,10 @@ class Manager {
                 }
                 imagedestroy($image);
                 $this->_mkdir(DATA_ROOT.$func.'/'.$image_dir);
-                header('Content-type: image/'.$image_type);
-                header('Content-Disposition: filename="'.$func.'_'.$image_file.'"');
+                if ($this->canEditHeader) {
+                    header('Content-type: image/' . $image_type);
+                    header('Content-Disposition: filename="' . $func . '_' . $image_file . '"');
+                }
                 if ($image_type == 'jpeg') {
                     imagejpeg($new_image, NULL, $jpeg_quality);
                     imagejpeg($new_image, $image_path_file, $jpeg_quality);
@@ -626,6 +593,146 @@ class Manager {
                     imagegif($new_image, $image_path_file);
                 }
                 imagedestroy($new_image);
+            }
+        }
+    }
+
+    public function image_imagick($image_dir, $image_file, $func, $download=FALSE) {
+        $image_path_file = DATA_ABSOLUTE_ROOT.$func.'/'.$image_dir.$image_file;
+        $image_type = $this->_image_type($image_file);
+
+        if ($func == 'image') {
+            if (!file_exists($image_path_file)) {
+                $image_path_file = GALLERY_ROOT.$image_dir.$image_file;
+            }
+            if ($download) {
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="'.$image_file.'"');
+            } else {
+                header('Content-Type: image/'.$image_type);
+                header('Content-Disposition: filename="'.$image_file.'"');
+            }
+            readfile($image_path_file);
+            exit;
+        }
+
+        if (($func == 'thumb') or ($func == 'preview')) {
+            if (file_exists($image_path_file)) {
+                header('Content-Type: image/'.$image_type);
+                header('Content-Disposition: filename="'.$func.'_'.$image_file.'"');
+                readfile($image_path_file);
+                exit;
+            } else {
+                if($func == 'thumb') {
+                    $max_width = THUMB_MAX_WIDTH;
+                    $max_height = THUMB_MAX_HEIGHT;
+                    $source_img = GALLERY_ABSOLUTE_ROOT.$image_dir.$image_file;
+                } else {
+                    $max_width = PREVIEW_MAX_WIDTH;
+                    $max_height = PREVIEW_MAX_HEIGHT;
+                    $source_img = DATA_ABSOLUTE_ROOT.'image/'.$image_dir.$image_file;
+                    if (!file_exists($source_img)) {
+                        $source_img = GALLERY_ABSOLUTE_ROOT.$image_dir.$image_file;
+                    }
+                }
+                if ((MPO_FULL_IMAGE or MPO_STEREO_IMAGE) and ($this->_ext($image_file)=='.mpo') and ($func != 'preview')) {
+                    if (!$image = $this->_mpo_image($source_img)) { exit; }
+                }
+
+                if (($func == 'thumb') and ($image_dir != ICONS_DIR)) {
+                    $this->_mkdir(DATA_ROOT.'info/'.$image_dir);
+                    $exif_info = '||||||';
+                    if (function_exists('exif_read_data')) {
+                        if (SHOW_EXIF_INFO) {
+                            $exif_data = exif_read_data(GALLERY_ROOT.$image_dir.$image_file, 'IFD0');
+                            if ($exif_data !== FALSE) {
+                                $exif_info = '';
+                                if(isset($exif_data['DateTimeOriginal'])) {
+                                    $exif_time = explode(':', str_replace(' ', ':', $exif_data['DateTimeOriginal']));
+                                    $exif_info .= date(DATE_FORMAT, mktime($exif_time[3], $exif_time[4], $exif_time[5], $exif_time[1], $exif_time[2], $exif_time[0]));
+                                } else {
+                                    $exif_info .= 'n/a';
+                                }
+                                $exif_info .= '|';
+                                $exif_info .= (isset($exif_data['Model'])?$exif_data['Model']:'n/a').'|';
+                                $exif_info .= (isset($exif_data['ISOSpeedRatings'])?$exif_data['ISOSpeedRatings']:'n/a').'|';
+                                if(isset($exif_data['ExposureTime'])) {
+                                    $exif_ExposureTime=create_function('','return '.$exif_data['ExposureTime'].';');
+                                    $exp_time = $exif_ExposureTime();
+                                    if ($exp_time > 0.25) {
+                                        $exif_info .= $exp_time;
+                                    } else {
+                                        $exif_info .= $exif_data['ExposureTime'];
+                                    }
+                                    $exif_info .= 's';
+                                } else {
+                                    $exif_info .= 'n/a';
+                                }
+                                $exif_info .= '|';
+                                if(isset($exif_data['FNumber'])) {
+                                    $exif_FNumber=create_function('','return number_format(round('.$exif_data['FNumber'].',1),1);');
+                                    $exif_info .= 'f'.$exif_FNumber();
+                                } else {
+                                    $exif_info .= 'n/a';
+                                }
+                                $exif_info .= '|';
+                                if(isset($exif_data['FocalLength'])) {
+                                    $exif_FocalLength=create_function('','return number_format(round('.$exif_data['FocalLength'].',1),1);');
+                                    $exif_info .= $exif_FocalLength().'mm';
+                                } else {
+                                    $exif_info .= 'n/a';
+                                }
+                                $exif_info .= '|';
+                                if(isset($exif_data['Flash'])) {
+                                    $exif_info .= (($exif_data['Flash'] & 1) ? TEXT_YES : TEXT_NO);
+                                } else {
+                                    $exif_info .= 'n/a';
+                                }
+                            } else {
+                                $exif_info = 'sfpg_no_exif_data_in_file||||||';
+                            }
+                        }
+                    }
+
+                    $iptc_info = '|||||||||||||||||';
+                    if(SHOW_IPTC_INFO) {
+                        $only_used_for_iptc = getimagesize(GALLERY_ROOT.$image_dir.$image_file, $info);
+                        if (isset($info['APP13'])) {
+                            $iptc_info = '';
+                            $iptc = iptcparse($info['APP13']);
+                            $iptc_info .= (isset($iptc['2#005']) ? $iptc['2#005'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#010']) ? $iptc['2#010'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#015']) ? $iptc['2#015'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#020']) ? $iptc['2#020'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#040']) ? $iptc['2#040'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#055']) ? $iptc['2#055'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#085']) ? $iptc['2#085'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#090']) ? $iptc['2#090'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#095']) ? $iptc['2#095'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#101']) ? $iptc['2#101'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#103']) ? $iptc['2#103'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#105']) ? $iptc['2#105'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#110']) ? $iptc['2#110'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#115']) ? $iptc['2#115'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#116']) ? $iptc['2#116'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#120']) ? $iptc['2#120'][0] : 'n/a').'|';
+                            $iptc_info .= (isset($iptc['2#122']) ? $iptc['2#122'][0] : 'n/a').'|';
+                        } else {
+                            $iptc_info = 'sfpg_no_iptc_data_in_file|||||||||||||||||';
+                        }
+                    }
+                    $fp = fopen(DATA_ROOT.'info/'.$image_dir.$image_file, 'w');
+                    $im = new Imagick();
+                    $im->pingImage($source_img);
+                    fwrite($fp, date(DATE_FORMAT, filemtime(GALLERY_ROOT.$image_dir.$image_file)).'|'.$this->_file_size(filesize(GALLERY_ROOT.$image_dir.$image_file)).'|'.$im->getImageWidth().'|'.$height = $im->getImageHeight().'|'.$exif_info.'|'.$iptc_info);
+                    fclose($fp);
+                }
+                $this->_mkdir(DATA_ROOT.$func.'/'.$image_dir);
+                if ($this->canEditHeader) {
+                    header('Content-type: image/' . $image_type);
+                    header('Content-Disposition: filename="' . $func . '_' . $image_file . '"');
+                }
+                $this->_resizeImage($source_img, $image_path_file, $max_width, $max_height);
             }
         }
     }
@@ -695,12 +802,44 @@ class Manager {
         }
     }
 
+    public function cron_dir($dir) {
+        global $dir_exclude, $file_exclude, $file_ext_exclude;
+        $dirs = array();
+        $images = array();
+        $directory_handle = opendir(GALLERY_ROOT.$dir);
+        if ($directory_handle != FALSE) {
+            while(($var=readdir($directory_handle))!==false)  {
+                if (is_dir(GALLERY_ROOT.$dir.$var)) {
+                    if (($var != '.') and ($var != '..') and !in_array(strtolower($var), $dir_exclude) and !@preg_match(DIR_EXCLUDE_REGEX, $var)) {
+                        $dirs[] = $var;
+                        $images = array_merge($images, $this->cron_dir($var));
+                    }
+                }
+                elseif ($this->_image_type($var)) {
+                    if (($var != DIR_IMAGE_FILE) and !@preg_match(IMAGE_EXCLUDE_REGEX, $var)) {
+                        if ((DELETE_IMAGE_DAYS) and (filemtime(GALLERY_ROOT.$dir.$var)<(time()-(DELETE_IMAGE_DAYS*86400)))) {
+                            unlink(GALLERY_ROOT.$dir.$var);
+                        } else {
+                            $images[] = $dir . "/" . $var;
+
+                        }
+                    }
+                }
+            }
+            closedir($directory_handle);
+            return $images;
+        }
+        else {
+            echo "No dir present";
+            exit;
+        }
+    }
+
     public function load_javascript() {
         global $dirs, $images, $files, $misc, $file_ext_thumbs;
 
         echo "<script language=\"JavaScript\" TYPE=\"text/javascript\">
 		<!--
-
 		var phpSelf = '".$_SERVER["PHP_SELF"]."';
 
 		var navLink = [];
@@ -750,61 +889,46 @@ class Manager {
 		";
         if (KEYBOARD_NAVIGATION)  {
             ?>
-            function keyNavigate(key)
-            {
-            var _Key = (window.event) ? event.keyCode : key.keyCode;
-            switch(_Key)
-            {
-            case 33: // Page up
-            case 38: // Up arrow
-            case 37: // Left arrow
-            cycleImg(-1);
-            break;
-            case 32: // Space
-            case 34: // Page down
-            case 39: // Right arrow
-            case 40: // Down arrow
-            cycleImg(1);
-            break;
-            case 27: // ESC
-            if(index)
-            {
-            closeImageView();
-            }
-            else
-            {
-            if(navLink.length>2)
-            {
-            document.location=phpSelf+'?sfpg='+navLink[navLink.length-3]+(showInfo?'&info=1':'');
-            }
-            }
-            break;
-            }
+            function keyNavigate(key) {
+                var _Key = (window.event) ? event.keyCode : key.keyCode;
+                switch(_Key) {
+                    case 33: // Page up
+                    case 38: // Up arrow
+                    case 37: // Left arrow
+                        cycleImg(-1);
+                        break;
+                    case 32: // Space
+                    case 34: // Page down
+                    case 39: // Right arrow
+                    case 40: // Down arrow
+                        cycleImg(1);
+                        break;
+                    case 27: // ESC
+                        if(index) {
+                            closeImageView();
+                        } else {
+                            if(navLink.length>2) {
+                                document.location=phpSelf+'?sfpg='+navLink[navLink.length-3]+(showInfo?'&info=1':'');
+                            }
+                        }
+                        break;
+                }
             }
             document.onkeyup = keyNavigate;
-        <?php
-        }
+<?php   }
         echo"
-
-		function getViewport()
-		{
-			if (typeof window.innerWidth != 'undefined')
-			{
+		function getViewport() {
+			if (typeof window.innerWidth != 'undefined') {
 				viewportWidth = window.innerWidth,
 				viewportHeight = window.innerHeight
-			}
-			else if (typeof document.documentElement != 'undefined' && typeof document.documentElement.clientWidth != 'undefined' && document.documentElement.clientWidth != 0)
-			{
+			} else if (typeof document.documentElement != 'undefined' && typeof document.documentElement.clientWidth != 'undefined' && document.documentElement.clientWidth != 0) {
 				viewportWidth = document.documentElement.clientWidth,
 				viewportHeight = document.documentElement.clientHeight
-			}
-			else
-			{
+			} else {
 				viewportWidth = document.getElementsByTagName('body')[0].clientWidth,
 				viewportHeight = document.getElementsByTagName('body')[0].clientHeight
 			}
-			if (showInfo)
-			{
+			if (showInfo) {
 				viewportWidth -= (".INFO_BOX_WIDTH." + 12);
 			}
 			viewportHeight -= ".MENU_BOX_HEIGHT.";
@@ -854,21 +978,14 @@ class Manager {
 				";
         if (TEXT_SLIDESHOW)
         {
-            echo"
-					if (slideshowActive)
-					{
+            echo"    if (slideshowActive) {
 						menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button_on\';\" class=\"sfpg_button_on\" onclick=\"slideshowActive=false; showMenu();\">".$this->_str_to_script(TEXT_SLIDESHOW)."</span>';
-					}
-					else
-					{
+                    } else {
 						menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"slideshowActive=true; showMenu(); slideshow(true);\">".$this->_str_to_script(TEXT_SLIDESHOW)."</span>';
 					}";
         }
         echo "
-
-			}
-			else
-			{
+			} else {
 				menu = '<span class=\"sfpg_button_disabled\">".$this->_str_to_script(TEXT_PREVIOUS)."</span>';
 				menu += '<span class=\"sfpg_button_disabled\">".$this->_str_to_script(TEXT_NEXT)."</span>';
 				".(TEXT_SLIDESHOW ? "menu += '<span class=\"sfpg_button_disabled\">" .$this->_str_to_script(TEXT_SLIDESHOW) . "</span>';" : "")."
@@ -876,29 +993,20 @@ class Manager {
         if (TEXT_INFO)
         {
             echo "
-				if (showInfo)
-				{
+				if (showInfo) {
 					menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button_on\';\" onclick=\"toggleInfo(showInfo);\" class=\"sfpg_button_on\">".$this->_str_to_script(TEXT_INFO)."</span>';
-				}
-				else
-				{
+				} else {
 					menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" onclick=\"toggleInfo(showInfo);\" class=\"sfpg_button\">".$this->_str_to_script(TEXT_INFO)."</span>';
 				}";
         }
         echo "
-			if (index && imageLargerThanViewport)
-			{
-				if (actualSize)
-				{
+			if (index && imageLargerThanViewport) {
+				if (actualSize) {
 					menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button_on\';\" class=\"sfpg_button_on\" onclick=\"fullSize()\">".$this->_str_to_script(TEXT_ACTUAL_SIZE)."</span>';
-				}
-				else
-				{
+				} else {
 					menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"fullSize()\">".$this->_str_to_script(TEXT_ACTUAL_SIZE)."</span>';
 				}
-			}
-			else
-			{
+			} else {
 				menu += '<span class=\"sfpg_button_disabled\">".$this->_str_to_script(TEXT_ACTUAL_SIZE)."</span>';
 			}
 
@@ -907,16 +1015,13 @@ class Manager {
         if (USE_PREVIEW)
         {
             echo "
-				if (index)
-				{
+				if (index) {
 					if (fullImgLoaded) {
 						menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button_on\';\" class=\"sfpg_button_on\" onclick=\"openImageView('+index+', false)\">".$this->_str_to_script(TEXT_FULLRES)."</span>';
 					} else {
 						menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"openImageView('+index+', true)\">".$this->_str_to_script(TEXT_FULLRES)."</span>';
 					}
-				}
-				else
-				{
+				} else {
 					menu += '<span class=\"sfpg_button_disabled\">".$this->_str_to_script(TEXT_FULLRES)."</span>';
 				}
 				";
@@ -925,24 +1030,18 @@ class Manager {
 			if (index) {
                 menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"downloadImage('+index+')\">".$this->_str_to_script(TEXT_DOWNLOAD_IMG)."</span>';
                 menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"closeImageView()\">".$this->_str_to_script(TEXT_CLOSE_IMG_VIEW)."</span>';
-			}
-			else
-			{
+			} else {
 				menu += '<span class=\"sfpg_button_disabled\">".$this->_str_to_script(TEXT_CLOSE_IMG_VIEW)."</span>';
 			}
 			";
-        if (LINK_BACK)
-        {
-            echo "menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"window.location=\'".LINK_BACK."\'\">".$this->_str_to_script(TEXT_LINK_BACK)."</span>';
-				";
+        if (LINK_BACK) {
+            echo "menu += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button\';\" class=\"sfpg_button\" onclick=\"window.location=\'".LINK_BACK."\'\">".$this->_str_to_script(TEXT_LINK_BACK)."</span>';";
         }
         echo "
 			document.getElementById('div_menu').innerHTML = menu;
 		}
 
-
-		function openImageView(imgId, full)
-		{
+		function openImageView(imgId, full) {
 			if (!index) {
 				document.getElementById('box_overlay').style.visibility='visible';
 				setOpacity('box_overlay', ".OVERLAY_OPACITY.");
@@ -960,20 +1059,13 @@ class Manager {
 			showImage(0);
 		}
 
-
-		function fillInfo(type, id)
-		{
-			if (!index || (type == 'img'))
-			{
+		function fillInfo(type, id) {
+			if (!index || (type == 'img')) {
 				var info='<div class=\"thumbimgbox\">';
-				if (type == 'dir')
-				{
-					if (dirThumb[id] != '')
-					{
+				if (type == 'dir') {
+					if (dirThumb[id] != '') {
 						info += '<img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+dirThumb[id]+'\">';
-					}
-					else
-					{
+					} else {
 						info += '<br><br>".$this->_str_to_script(TEXT_NO_IMAGES)."';
 					}
 					info += '</div>';
@@ -984,17 +1076,13 @@ class Manager {
 					info += '".$this->_str_to_script(TEXT_DATE).": '+splint[0]+'<br>';
 					info += '".$this->_str_to_script(TEXT_DIRS).": '+splint[1]+'<br>';
 					info += '".$this->_str_to_script(TEXT_IMAGES).": '+splint[2]+'<br>';";
-        if (SHOW_FILES)
-        {
-            echo "
-						info += '".$this->_str_to_script(TEXT_FILES).": '+splint[3]+'<br>';";
+        if (SHOW_FILES) {
+            echo "info += '".$this->_str_to_script(TEXT_FILES).": '+splint[3]+'<br>';";
         }
         echo "
 					info += '</div><br>';
 					info += '<strong>".$this->_str_to_script(TEXT_LINKS)."</strong><br><a href=\"'+phpSelf+'?sfpg='+dirLink[id]+'\">".$this->_str_to_script(TEXT_DIRECT_LINK_GALLERY)."</a><br><br>';
-				}
-				else if (type == 'img')
-				{
+				} else if (type == 'img') {
 					info += '<img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+imgLink[id]+'\">';
 					info += '</div>';
 					var splint = imgInfo[id].split('|');
@@ -1002,8 +1090,7 @@ class Manager {
 					";
 
         echo"
-					if (typeof splint[10] != 'undefined')
-					{
+					if (typeof splint[10] != 'undefined') {
 						info += '<strong>".$this->_str_to_script(TEXT_DESCRIPTION)."</strong><br><div class=\"sfpg_info_text\">';
 						info += splint[29]+'<br>';
 						info += '</div><br>';
@@ -1012,12 +1099,9 @@ class Manager {
 						info += '".$this->_str_to_script(TEXT_DATE).": '+splint[0]+'<br>';
 						info += '".$this->_str_to_script(TEXT_IMAGESIZE).": '+splint[2]+' x '+splint[3]+'<br>';
 						info += '".$this->_str_to_script(TEXT_DISPLAYED_IMAGE).": <span id=\"img_size\"></span> (';
-						if (fullImgLoaded || ".(USE_PREVIEW ? "false" : "true").")
-						{
+						if (fullImgLoaded || ".(USE_PREVIEW ? "false" : "true").") {
 							info += '".$this->_str_to_script(TEXT_THIS_IS_FULL)."';
-						}
-						else
-						{
+						} else {
 							info += '".$this->_str_to_script(TEXT_THIS_IS_PREVIEW)."';
 						}
 						info += ')<br>';
@@ -1026,16 +1110,12 @@ class Manager {
 						info += '".$this->_str_to_script(TEXT_IMAGE_NUMBER).": '+id+' / '+(imgLink.length-1)+'<br>';
 						info += '</div><br>';";
 
-        if (SHOW_EXIF_INFO)
-        {
+        if (SHOW_EXIF_INFO) {
             echo"
 							info += '<strong>".$this->_str_to_script(TEXT_EXIF)."</strong><br><div class=\"sfpg_info_text\">';
-							if (splint[4] == 'sfpg_no_exif_data_in_file')
-							{
+							if (splint[4] == 'sfpg_no_exif_data_in_file') {
 								info += '".$this->_str_to_script(TEXT_EXIF_MISSING)."';
-							}
-							else
-							{
+							} else {
 								info += '".$this->_str_to_script(TEXT_EXIF_DATE).": '+splint[4]+'<br>';
 								info += '".$this->_str_to_script(TEXT_EXIF_CAMERA).": '+splint[5]+'<br>';
 								info += '".$this->_str_to_script(TEXT_EXIF_ISO).": '+splint[6]+'<br>';
@@ -1049,14 +1129,10 @@ class Manager {
 
         if (SHOW_IPTC_INFO)
         {
-            echo"
-							info += '<strong>".$this->_str_to_script(TEXT_IPTC)."</strong><br><div class=\"sfpg_info_text\">';
-							if (splint[11] == 'sfpg_no_iptc_data_in_file')
-							{
+            echo"           info += '<strong>".$this->_str_to_script(TEXT_IPTC)."</strong><br><div class=\"sfpg_info_text\">';
+							if (splint[11] == 'sfpg_no_iptc_data_in_file') {
 								info += '".$this->_str_to_script(TEXT_IPTC_MISSING)."';
-							}
-							else
-							{
+							} else {
 								info += '".$this->_str_to_script(TEXT_IPTC_TITLE).": '+splint[11]+'<br>';
 								info += '".$this->_str_to_script(TEXT_IPTC_URGENCY).": '+splint[12]+'<br>';
 								info += '".$this->_str_to_script(TEXT_IPTC_CATEGORY).": '+splint[13]+'<br>';
@@ -1079,24 +1155,16 @@ class Manager {
 							info += '</div><br>';";
         }
         echo"
-					}
-					else
-					{
+					} else {
 						info += '<br><strong>".$this->_str_to_script(TEXT_FIRST_VIEW)."</strong><br><br><span id=\"img_size\"></span><span id=\"img_resize\"></span><br><br>';
 					}
-
 					info += '<strong>".$this->_str_to_script(TEXT_LINKS)."</strong><br>';
 					info += '<a href=\"'+phpSelf+'?sfpg='+imgLink[id]+'\">".$this->_str_to_script(TEXT_DIRECT_LINK_IMAGE)."</a><br>';
 					".(TEXT_DOWNLOAD ? "info += '<a id=\"download_link_'+id+'\" href=\"'+phpSelf+'?cmd=dl&sfpg='+imgLink[id]+'\">".$this->_str_to_script(TEXT_DOWNLOAD)."</a><br><br>';" : "")."
-				}
-				else if (type == 'file')
-				{
-					if (fileThumb[id] != '')
-					{
+				} else if (type == 'file') {
+					if (fileThumb[id] != '') {
 						info += '<img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+fileThumb[id]+'\">';
-					}
-					else
-					{
+					} else {
 						info += '<br><br>".$this->_str_to_script(TEXT_NO_PREVIEW_FILE)."<br>';
 					}
 					info += '</div>';
@@ -1112,15 +1180,10 @@ class Manager {
 			}
 		}
 
-
-		function toggleInfo(status)
-		{
-			if (status)
-			{
+		function toggleInfo(status) {
+			if (status) {
 				document.getElementById('box_info').style.visibility='hidden';
-			}
-			else
-			{
+			} else {
 				setOpacity('box_info', 0);
 				document.getElementById('box_info').style.visibility='visible';
 				fadeOpacity('box_info', 0,	100, ".FADE_DURATION_MS.");
@@ -1129,25 +1192,17 @@ class Manager {
 			initDisplay();
 		}
 
-
-		function openGallery(id, type)
-		{
+		function openGallery(id, type) {
 			window.location=phpSelf+'?sfpg='+((type=='nav')?navLink[id]:dirLink[id])+(showInfo?'&info=1':'');
 		}
 
-
-		function openFile(id)
-		{
-			if (".(FILE_IN_NEW_WINDOW ? "true" : "false").")
-			{
+		function openFile(id) {
+			if (".(FILE_IN_NEW_WINDOW ? "true" : "false").") {
 				window.open(phpSelf+'?cmd=file&sfpg='+fileLink[id]);
-			}
-			else
-			{
+			} else {
 				window.location	= phpSelf+'?cmd=file&sfpg='+fileLink[id];
 			}
 		}
-
 
 		function showImage(stage) {
 			if(stage==0) {
@@ -1164,8 +1219,7 @@ class Manager {
 				}
 			}
 			if(stage==2) {
-				if(document.getElementById('full').complete)
-				{
+				if(document.getElementById('full').complete) {
 					naviOk=true;
 					imgFullWidth = preloadImg.width;
 					imgFullHeight = preloadImg.height;
@@ -1177,19 +1231,17 @@ class Manager {
 					stage=3;
 				}
 			}
-			if (waitSpinNr >= waitSpin.length){
+			if (waitSpinNr >= waitSpin.length) {
 				waitSpinNr = 0;
 			}
 			document.getElementById('wait').innerHTML = '<div class=\"loading\">".$this->_str_to_script(TEXT_IMAGE_LOADING)."' + waitSpin[waitSpinNr] + '</div>';
 			waitSpinNr++;
-			if ((stage<3) && index){
+			if ((stage<3) && index) {
 				setTimeout ('showImage('+stage+')',waitSpinSpeed);
 			}
 		}
 
-
-		function closeImageView()
-		{
+		function closeImageView() {
 			slideshowActive = false;
 			document.getElementById('box_wait').style.visibility='hidden';
 			document.getElementById('wait').style.visibility='hidden';
@@ -1204,25 +1256,18 @@ class Manager {
 			fillInfo('dir', 0);
 		}
 
-
-
-		function thumbDisplayName(name)
-		{
+		function thumbDisplayName(name) {
 			dispName = name.substring(0,".THUMB_CHARS_MAX.");
-			if (name.length > ".THUMB_CHARS_MAX.")
-			{
+			if (name.length > ".THUMB_CHARS_MAX.") {
 				dispName += '...';
 			}
 			return dispName;
 		}
 
-
-		function addElement(elementNumber, type)
-		{
+		function addElement(elementNumber, type) {
 			var divClassName = 'thumbbox';
 			var content='';
-			if (type == 'dir')
-			{
+			if (type == 'dir') {
                 divClassName = divClassName+' thumbbox-dir';
                 if (dirLocked[elementNumber] == '1') {
 			        divClassName = divClassName+' locked';
@@ -1232,52 +1277,38 @@ class Manager {
 				if (dirLocked[elementNumber] == '1') {
 	                content += '<div class=\"locked_bg\"></div>';
 			    }
-				if (dirThumb[elementNumber] != '')
-				{
+				if (dirThumb[elementNumber] != '') {
 					content += '<img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+dirThumb[elementNumber]+'\">';
-				}
-				else
-				{
+				} else {
 					content += '<br><br>".$this->_str_to_script(TEXT_NO_IMAGES)."';
 				}
 				content += '</div>';
 				". (THUMB_CHARS_MAX ? "content += '['+thumbDisplayName(dirName[elementNumber])+']';" : "")."
 				content += '</div>';
-			}
-			else if (type == 'img')
-			{
+			} else if (type == 'img') {
 				content = '<div onclick=\"openImageView('+elementNumber+', false)\" onmouseover=\"this.className=\'innerboximg_hover\'; fillInfo(\'img\', '+elementNumber+')\" onmouseout=\"this.className=\'innerboximg\'; fillInfo(\'dir\', 0)\" class=\"innerboximg\"><div class=\"thumbimgbox\"><img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+imgLink[elementNumber]+'\"></div>';
 				". (THUMB_CHARS_MAX ? "content += thumbDisplayName(imgName[elementNumber]);" : "")."
 				content += '</div>';
-			}
-			else if (type == 'file')
-			{
+			} else if (type == 'file') {
 				content = '<div onclick=\"openFile('+elementNumber+')\" onmouseover=\"this.className=\'innerboxfile_hover\'; fillInfo(\'file\', '+elementNumber+')\" onmouseout=\"this.className=\'innerboxfile\'; fillInfo(\'dir\', 0)\" class=\"innerboxfile\"><div class=\"thumbimgbox\">';
-				if (fileThumb[elementNumber] != '')
-				{
+				if (fileThumb[elementNumber] != '') {
 					content += '<img class=\"thumb\" alt=\"\" src=\"'+phpSelf+'?cmd=thumb&sfpg='+fileThumb[elementNumber]+'\">';
-				}
-				else
-				{
+				} else {
 					content += '<br><br>".$this->_str_to_script(TEXT_NO_PREVIEW_FILE)."';
 				}
 				content += '</div>';
 				". (THUMB_CHARS_MAX ? "content += thumbDisplayName(fileName[elementNumber]);" : "")."
 				content += '</div>';
-			}
-			else if (".(DIR_DESC_IN_GALLERY?'true':'false')." && (type == 'desc'))
-			{
+			} else if (".(DIR_DESC_IN_GALLERY?'true':'false')." && (type == 'desc')) {
 				var splint = dirInfo[elementNumber].split('|');
-				if ((typeof splint[4] != 'undefined') && (splint[4] != ''))
-				{
+				if ((typeof splint[4] != 'undefined') && (splint[4] != '')) {
 					divClassName = 'descbox';
 					content = '<div class=\"innerboxdesc\">';
 					content += splint[4];
 					content += '</div>';
 				}
 			}
-			if (content != '')
-			{
+			if (content != '') {
 				var newdiv = document.createElement('div');
 				newdiv.className = divClassName;
 				newdiv.innerHTML = content;
@@ -1286,77 +1317,55 @@ class Manager {
 			}
 		}
 
-
-		function showGallery(initOpenImage)
-		{
+		function showGallery(initOpenImage) {
 			initDisplay();
-			if (initOpenImage)
-			{
+			if (initOpenImage) {
 				openImageView(initOpenImage, false);
-			}
-			else
-			{
+			} else {
 				fillInfo('dir', 0);
 			}
-
-			if (showInfo)
-			{
+			if (showInfo) {
 				toggleInfo(false);
 			}
-
 			var navLinks = '';
-			for (i = 1; i < navLink.length; i++)
-			{
-				if (navLink[i] != '')
-				{
+			for (i = 1; i < navLink.length; i++) {
+				if (navLink[i] != '') {
 					navLinks += '<span onmouseover=\"this.className=\'sfpg_button_hover\';\" onmouseout=\"this.className=\'sfpg_button_nav\';\" class=\"sfpg_button_nav\" onclick=\"openGallery('+i+', \'nav\')\">'+navName[i]+'</span>';
-				}
-				else
-				{
+				} else {
 					navLinks += navName[i];
 				}
 			}
 			document.getElementById('navi').innerHTML = navLinks;
 			addElement(0, 'desc');
-			for (i = 1; i < dirLink.length; i++)
-			{
+			for (i = 1; i < dirLink.length; i++) {
 				addElement(i, 'dir');
 			}
 
-			for (i = 1; i < imgLink.length; i++)
-			{
+			for (i = 1; i < imgLink.length; i++) {
 				addElement(i, 'img');
 			}
 
-			for (i = 1; i < fileLink.length; i++)
-			{
+			for (i = 1; i < fileLink.length; i++) {
 				addElement(i, 'file');
 			}
 		}
 
 
-		function slideshow(click)
-		{
-			if(slideshowActive)
-			{
-				if(click)
-				{
+		function slideshow(click) {
+			if(slideshowActive) {
+				if(click) {
 					openImageView(nextImage(1),false);
 					slideshowSec=0;
 				}
-				if(slideshowSec>=".SLIDESHOW_DELAY_SEC.")
-				{
-					if(preloadImg.complete)
-					{
+				if(slideshowSec>=".SLIDESHOW_DELAY_SEC.") {
+					if(preloadImg.complete) {
 						openImageView(nextImage(1),false);
 						slideshowSec=0;
 					}
 				}
 				slideshowSec++;
 				setTimeout('slideshow(false)',1000);
-			}
-			else
-			{
+			} else {
 				slideshowSec=0;
 			}
 		}
@@ -1512,7 +1521,6 @@ class Manager {
             echo "fileInfo[".($item)."] = '".$this->_str_to_script(@file_get_contents(DATA_ROOT."info/".GALLERY.$val)."|".(in_array($val.DESC_EXT, $misc)?@file_get_contents(GALLERY_ROOT.GALLERY.$val.DESC_EXT):""))."';\n\n";
             $item++;
         }
-
         echo "
 		//-->
 		</script>";
@@ -1539,7 +1547,6 @@ class Manager {
             $dirPassword = trim(file_get_contents(GALLERY_ROOT . GALLERY . "/" . PASSWORD_FILE));
             $md5DirPassword = md5($dirPassword);
         }
-
         if (isset($_SESSION[$this->_encodedUrl])) {
             return $_SESSION[$this->_encodedUrl] == TRUE;
         } elseif (isset($_COOKIE[$this->_encodedUrl])) {
@@ -1547,6 +1554,45 @@ class Manager {
         } else {
             return false;
         }
+    }
+
+
+    private function _resizeImage($originalImage, $newImage, $newWidth, $newHeight) {
+        $im = new Imagick();
+        try {
+            $im->pingImage($originalImage);
+        } catch (ImagickException $e) {
+            throw new Exception('Invalid or corrupted image file, please try uploading another image.');
+        }
+
+        $width  = $im->getImageWidth();
+        $height = $im->getImageHeight();
+
+        list($newWidth, $newHeight) = $this->_aspect_resize($width, $height, $newWidth, $newHeight, $enlarge);
+
+        if ($width > $newWidth || $height > $newHeight) {
+            try {
+                $fitbyWidth = ($newWidth / $width) > ($newHeight / $height);
+                $aspectRatio = $height / $width;
+                if ($fitbyWidth) {
+                    $im->setSize($newWidth, abs($width * $aspectRatio));
+                } else {
+                    $im->setSize(abs($height / $aspectRatio), $newHeight);
+                }
+                $im->readImage($originalImage);
+                if ($fitbyWidth) {
+                    $im->thumbnailImage($newWidth, 0, false);
+                } else {
+                    $im->thumbnailImage(0, $newHeight, false);
+                }
+                $im->setImageFileName($newImage);
+                $im->writeImage();
+            } catch (ImagickException $e) {
+                header('HTTP/1.1 500 Internal Server Error');
+                throw new Exception('An error occured reszing the image.');
+            }
+        }
+        $im->destroy();
     }
 }
 

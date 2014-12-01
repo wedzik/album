@@ -4,8 +4,10 @@ define('INCLUDE_GLOB_SCRIPTS_PATCH', $_SERVER['DOCUMENT_ROOT'].'/_html/');
 define('INCLUDE_JS_PATCH', '/_html/js/');
 define('INCLUDE_CSS_PATCH', '/_html/css/');
 
-define('GALLERY_ROOT', '../datadb/');
-define('DATA_ROOT', '../datadb/_album_data/');
+define('GALLERY_ROOT', '../datadb/albums/');
+define('GALLERY_ABSOLUTE_ROOT',  $_SERVER['DOCUMENT_ROOT'].'/../datadb/albums/');
+define('DATA_ROOT', '../datadb/_albums_data/');
+define('DATA_ABSOLUTE_ROOT', $_SERVER['DOCUMENT_ROOT'].'/../datadb/_albums_data/');
 define('SECURITY_PHRASE', 'change this text!');
 
 define('DIR_NAME_FILE', '_name.txt');
@@ -18,6 +20,7 @@ define('DIR_SORT_REVERSE', FALSE);
 define('DIR_SORT_BY_TIME', FALSE);
 $dir_exclude = array('_album_data', '_album_icons', '_html');
 define('DIR_EXCLUDE_REGEX', '');
+define('USE_IMAGICK', FALSE);
 
 define('SHOW_IMAGE_EXT', FALSE);
 define('IMAGE_SORT_REVERSE', FALSE);
@@ -33,7 +36,7 @@ define('FILE_THUMB_EXT', '.jpg');
 define('FILE_SORT_REVERSE', FALSE);
 define('FILE_SORT_BY_TIME', FALSE);
 $file_exclude = array();
-$file_ext_exclude = array('.php', '.txt', '.sell');
+$file_ext_exclude = array('.php', '.txt', '.sell','.gitignore');
 define('FILE_EXCLUDE_REGEX', '');
 $file_ext_thumbs = array('.pdf' => 'pdf.png');
 

@@ -25,7 +25,6 @@ if (isset($_GET['cmd'])) {
         }
         if ($_GET['cmd'] == 'image') {
             $manager->image(GALLERY, IMAGE, 'image');
-            //$manager->image(GALLERY, IMAGE, 'preview');
             exit;
         }
         if ($_GET['cmd'] == 'preview') {
